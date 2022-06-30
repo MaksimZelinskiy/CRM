@@ -23,15 +23,15 @@ class Customer(models.Model):
 
     class Meta:
         db_table = "customers"
-        verbose_name = "Описание контрагента"
-        verbose_name_plural = "Описание контрагента"
+        verbose_name = "Контрагента"
+        verbose_name_plural = "Контрагенты"
 
     customer_name = models.TextField(verbose_name="Наименование организации")
     customer_address = models.TextField(verbose_name="Адрес")
     customer_city = models.TextField(verbose_name="Город")
 
     def __str__(self):
-        return self.customer_name
+        return f"{self.customer_name} по адресу {self.customer_address}"
 
 class DeviceInField(models.Model):
     """Оборудование в полях"""
@@ -42,12 +42,12 @@ class DeviceInField(models.Model):
         verbose_name_plural = "Оборудование в полях"
 
     serial_number = models.TextField(verbose_name="Серийный номер")
-    customers_id = models.ForeignKey(Customer, on_delete=models.RESTRICT, verbose_name="Идентификатор контрагента")
-    analyzer_id = models.ForeignKey(Device, on_delete=models.RESTRICT, verbose_name="Идентификатор оборудования")
+    customer = models.ForeignKey(Customer, on_delete=models.RESTRICT, verbose_name="Идентификатор контрагента")
+    analyzer = models.ForeignKey(Device, on_delete=models.RESTRICT, verbose_name="Идентификатор оборудования")
     owner_status = models.TextField(verbose_name="Статус принадлежности")
 
     def __str__(self):
-        return f"{self.serial_number} {self.analyzer_id}"
+        return f"{self.analyzer} с/н {self.serial_number} в {self.customer}"
 
 def status_validator(order_status):
     if order_status not in ["open", "closed", "in progress", "need info"]:
@@ -66,12 +66,15 @@ class Order(models.Model):
         verbose_name_plural = "Заявки"
 
 
+
     device = models.ForeignKey(DeviceInField, verbose_name="Оборудование", on_delete=models.RESTRICT)
-    customers = models.ForeignKey(Customer, verbose_name="Конечный пользователь", on_delete=models.RESTRICT)
     order_description = models.TextField(verbose_name="Описание")
     created_at = models.DateTimeField(verbose_name="Создано", auto_now_add=True)
     last_updated_at = models.DateTimeField(verbose_name="Последние изменение", blank=True, null=True)
     order_status = models.TextField(verbose_name="Статус заявки", validators=[status_validator])
+
+    def __str__(self):
+        return f"Заявка №{self.id} для {self.device}"
 
     def save(self, *args, **kwargs):
         self.last_updated_at = datetime.now()
